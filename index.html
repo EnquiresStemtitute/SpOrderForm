@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stemtitute｜內部特殊訂單</title>
+  <style>
+    :root {
+      --primary:#0879a8; --primary-dark:#075c80; --bg:#f3f7fa;
+      --card:#fff; --text:#1d2935; --muted:#657585; --border:#d8e2e9;
+      --danger:#b42318; --success:#067647;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0; background:var(--bg); color:var(--text);
+      font:16px/1.5 Arial,"Noto Sans TC",sans-serif;
+    }
+    .wrap { max-width:900px; margin:28px auto; padding:0 16px 40px; }
+    header { margin-bottom:20px; }
+    h1 { font-size:26px; margin:0 0 5px; }
+    h2 { font-size:19px; margin:0 0 14px; }
+    .sub,.hint { color:var(--muted); font-size:13px; }
+    .card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:14px; padding:22px; margin:15px 0;
+      box-shadow:0 2px 8px #102a4308;
+    }
+    .grid {
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    .field { min-width:0; }
+    label { display:block; font-weight:600; font-size:14px; margin:0 0 6px; }
+    input,select,textarea {
+      width:100%; border:1px solid #c8d5de; border-radius:8px;
+      padding:10px 11px; font:inherit; background:#fff; color:var(--text);
+    }
+    textarea { min-height:78px; resize:vertical; }
+    input:focus,select:focus,textarea:focus {
+      outline:2px solid #8bd3f0; border-color:var(--primary);
+    }
+    .row-card {
+      border:1px solid var(--border); border-radius:10px;
+      padding:14px; margin:10px 0;
+    }
+    .row-head {
+      display:flex; justify-content:space-between; align-items:center;
+      gap:10px; margin-bottom:10px; font-weight:700;
+    }
+    .btn {
+      border:0; border-radius:8px; padding:10px 14px;
+      font-weight:700; cursor:pointer;
+    }
+    .btn-primary { background:var(--primary); color:white; }
+    .btn-primary:hover { background:var(--primary-dark); }
+    .btn-outline {
+      border:1px solid var(--primary); background:white; color:var(--primary);
+    }
+    .btn-remove { background:#fff1f0; color:var(--danger); padding:6px 10px; }
+    .btn:disabled { opacity:.6; cursor:not-allowed; }
+    .segmented { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .segmented label {
+      border:1px solid var(--border); border-radius:9px;
+      padding:10px 12px; cursor:pointer; font-weight:500;
+    }
+    .segmented input { width:auto; margin-right:6px; }
+
+    .lesson-unlock-row {
+      display:flex; gap:10px; align-items:center;
+      margin:8px 0; padding:8px 10px;
+      background:#f7fafc; border:1px solid var(--border);
+      border-radius:8px;
+    }
+    .lesson-unlock-row label {
+      flex:1; font-weight:400; margin:0;
+      display:flex; gap:8px; align-items:center;
+    }
+    .lesson-unlock-row input[type="checkbox"] { width:auto; margin:0; }
+    .lesson-price-group {
+      display:flex; align-items:center; gap:5px;
+    }
+    .lesson-price-group span {
+      font-size:12px; color:var(--muted); font-weight:600;
+    }
+    .lesson-price-group input[type="number"] {
+      width:90px; padding:6px 8px;
+    }
+
+    .item-breakdown {
+      background:#fff8e1; border:1px solid #ffe082;
+      border-radius:8px; padding:10px 12px; margin-bottom:12px;
+      font-size:13px;
+    }
+    .breakdown-title {
+      font-weight:700; margin-bottom:6px; color:#b26500;
+    }
+    .breakdown-item {
+      padding:3px 0; font-family:Consolas,monospace; font-size:12px;
+    }
+    .breakdown-sub {
+      padding:2px 0 2px 16px; font-size:12px; color:var(--muted);
+    }
+
+    .total { background:#edf8fc; border-radius:10px; padding:14px; margin-top:12px; }
+    .total-line {
+      display:flex; justify-content:space-between;
+      gap:12px; padding:4px 0;
+    }
+    .total-amount { font-size:21px; font-weight:800; }
+    .status {
+      padding:11px 13px; border-radius:8px; margin:12px 0;
+      display:none; white-space:pre-wrap;
+    }
+    .status.info { display:block; background:#eff8ff; color:#175cd3; }
+    .status.error { display:block; background:#fef3f2; color:var(--danger); }
+    .status.success { display:block; background:#ecfdf3; color:var(--success); }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .required { color:var(--danger); }
+    [hidden] { display:none !important; }
+    @media(max-width:620px) {
+      .grid { grid-template-columns:1fr; }
+      .card { padding:16px; }
+      h1 { font-size:22px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <header>
+    <h1>Stemtitute｜內部特殊訂單</h1>
+    <div class="sub">內部使用。寫入 New Orders Sheet。</div>
+  </header>
+
+  <div id="status" class="status info">載入付款方式及商品中…</div>
+
+  <form id="internalOrderForm" novalidate>
+    <!-- A. 基本資料 -->
+    <section class="card">
+      <h2>A. 基本資料</h2>
+      <p class="hint">標示 <span class="required">*</span> 的欄位均為必填。</p>
+
+      <div class="grid">
+        <div class="field">
+          <label for="receiver">客戶／收件人姓名 <span class="required">*</span></label>
+          <input id="receiver" required autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="tel">聯絡電話 <span class="required">*</span></label>
+          <input id="tel" required autocomplete="tel">
+        </div>
+        <div class="field">
+          <label for="email">客戶 Email <span class="required">*</span></label>
+          <input id="email" type="email" required autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="owner">負責人姓名 <span class="required">*</span></label>
+          <input id="owner" required value="Elise" placeholder="例如 Elise">
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label for="mailing_address">郵寄地址 <span class="required">*</span></label>
+          <textarea id="mailing_address" required autocomplete="street-address"></textarea>
+        </div>
+      </div>
+
+      <p class="hint">
+        訂單編號由後端產生：STEM-時間戳記＋負責人姓名首兩個英文字母。
+      </p>
+    </section>
+
+    <!-- B. 學生帳號解鎖 -->
+    <section class="card">
+      <h2>B. 學生帳號解鎖</h2>
+      <p class="hint">
+        不用填寫購買學生人數；按「＋新增學生」加入需要使用 App 的學生。
+        新學生或現有學生驗證後都可勾選要解鎖的課程並輸入特別單價。
+      </p>
+
+      <div id="students"></div>
+
+      <button type="button" class="btn btn-outline" id="addStudent">
+        ＋ 新增學生
+      </button>
+    </section>
+
+    <!-- C. 訂購商品 -->
+    <section class="card">
+      <h2>C. 訂購商品</h2>
+      <p class="hint">
+        此區記錄學生帳號解鎖以外的產品，與解鎖學生帳號無關。
+      </p>
+
+      <div class="field">
+        <label>報價方式</label>
+        <div class="segmented">
+          <label>
+            <input type="radio" name="pricingMode" value="unit" checked>
+            每件特別售價
+          </label>
+          <label>
+            <input type="radio" name="pricingMode" value="bundle">
+            特別報價組合（整組總價）
+          </label>
+        </div>
+      </div>
+
+      <div id="unitPricing">
+        <div id="products"></div>
+        <button type="button" class="btn btn-outline" id="addProduct">
+          ＋ 新增商品
+        </button>
+      </div>
+
+      <div id="bundlePricing" hidden>
+        <div class="grid">
+          <div class="field">
+            <label for="bundleName">
+              組合名稱／內容 <span class="required">*</span>
+            </label>
+            <input id="bundleName" placeholder="例如：5 件商品特別組合">
+          </div>
+          <div class="field">
+            <label for="bundleQty">組合數量</label>
+            <input id="bundleQty" type="number" min="1" step="1" value="1">
+          </div>
+          <div class="field">
+            <label for="bundlePrice">
+              每組總價（HKD） <span class="required">*</span>
+            </label>
+            <input id="bundlePrice" type="number" min="0" step="0.01" placeholder="例如 100">
+          </div>
+          <div class="field">
+            <label for="bundleItems">組合內商品及數量</label>
+            <textarea id="bundleItems" placeholder="例如：商品 A × 2；商品 B × 3"></textarea>
+          </div>
+        </div>
+        <p class="hint">
+          組合模式以整組價格計算，不會再把每項商品的標準價格加總；
+          請記錄組合內商品及數量，方便日後追蹤學生購買紀錄。
+        </p>
+      </div>
+
+      <div class="grid" style="margin-top:14px">
+        <div class="field">
+          <label for="shipping">運費（HKD）</label>
+          <input id="shipping" type="number" min="0" step="0.01" value="0">
+        </div>
+      </div>
+
+      <div class="total">
+        <div id="itemBreakdown" class="item-breakdown" hidden></div>
+
+        <div class="total-line">
+          <span>訂購商品小計</span>
+          <strong id="subtotalDisplay">HKD 0.00</strong>
+        </div>
+        <div class="total-line" id="unlockTotalLine" hidden>
+          <span>解鎖課程小計</span>
+          <strong id="unlockTotalDisplay">HKD 0.00</strong>
+        </div>
+        <div class="total-line">
+          <span>運費</span>
+          <strong id="shippingDisplay">HKD 0.00</strong>
+        </div>
+        <div class="total-line total-amount">
+          <span>訂單總額</span>
+          <span id="totalDisplay">HKD 0.00</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- D. 付款資料 -->
+    <section class="card">
+      <h2>D. 付款資料</h2>
+
+      <div class="grid">
+        <div class="field">
+          <label for="payment_method">
+            付款方式 <span class="required">*</span>
+          </label>
+          <select id="payment_method" required>
+            <option value="">請選擇付款方式</option>
+          </select>
+          <p class="hint">由 PaymentMethods 工作表載入。</p>
+        </div>
+        <div class="field">
+          <label for="receipt">付款收據／證明</label>
+          <input id="receipt" type="file" accept="image/*,.pdf">
+          <p class="hint">支援圖片或 PDF，上限 10 MB。上傳後會存到 S3。</p>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <label for="internalNote">內部備註（選填）</label>
+        <textarea id="internalNote" placeholder="例如：已與客戶確認特殊價格"></textarea>
+      </div>
+    </section>
+
+    <!-- E. 提交 -->
+    <section class="card">
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          提交特殊訂單
+        </button>
+      </div>
+
+      <p class="hint">
+        提交後會寫入 New Orders Sheet，並寄出確認電郵（如果上傳了收據，會同時上傳到 S3）。
+      </p>
+
+      <div id="submitStatus" class="status"></div>
+    </section>
+  </form>
+</div>
+
+<script>
+const INTERNAL_GAS_URL =
+  "https://script.google.com/macros/s/AKfycbyQk3PNBWA7EFNXlL0YRWXXq12SgPStP4u2TDMaHwhw5gEtAPLiEemZAaC9QBCAMSvzWQ/exec";
+
+const CURRENCY = "HKD";
+
+let productsCatalog = [];
+let allUnlockableLessons = [];
+let studentCounter = 0;
+let productCounter = 0;
+
+const $ = id => document.getElementById(id);
+
+const money = value => `${CURRENCY} ${Number(value || 0).toFixed(2)}`;
+
+const esc = value =>
+  String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[ch]));
+
+function showStatus(message, type = "info") {
+  const el = $("status");
+  el.className = `status ${type}`;
+  el.textContent = message;
+}
+
+function showSubmitStatus(message, type = "info") {
+  const el = $("submitStatus");
+  el.className = `status ${type}`;
+  el.textContent = message;
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function clearSubmitStatus() {
+  const el = $("submitStatus");
+  el.className = "status";
+  el.textContent = "";
+}
+
+/* -------------------------
+   GAS 請求包裝
+------------------------- */
+
+async function gasGet(params = {}, { timeout = 15000 } = {}) {
+  if (!INTERNAL_GAS_URL) throw new Error("尚未設定 INTERNAL_GAS_URL。");
+
+  const qs = new URLSearchParams({ ...params, src: "internal", _t: Date.now() });
+  const url = INTERNAL_GAS_URL + "?" + qs.toString();
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "GET", redirect: "follow", cache: "no-store",
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err.name === "AbortError") throw new Error(`連線逾時（>${timeout}ms）。`);
+    if (err.name === "TypeError" || String(err.message).toLowerCase().includes("failed to fetch")) {
+      throw new Error(
+        "無法連線到 GAS（Failed to fetch）。請檢查：\n" +
+        "1. 本頁是否用 file:// 開啟？請改用 http://localhost 或部署到 HTTPS 網站。\n" +
+        "2. GAS 部署是否仍存在，且 Who has access = Anyone。\n" +
+        "3. URL 結尾是否為 /exec（不是 /dev）。\n" +
+        "4. 是否已重新部署為 New version。"
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const text = await res.text();
+  if (!res.ok) throw new Error(`GAS 回應 HTTP ${res.status}：${text.slice(0, 200)}`);
+  try { return JSON.parse(text); }
+  catch {
+    throw new Error(
+      "GAS 回應不是 JSON。可能部署設定有問題（需 Anyone + /exec）。\n" +
+      "回應開頭：" + text.slice(0, 200).replace(/\s+/g, " ")
+    );
+  }
+}
+
+async function gasPost(payload, { timeout = 60000 } = {}) {
+  if (!INTERNAL_GAS_URL) throw new Error("尚未設定 INTERNAL_GAS_URL。");
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  let res;
+  try {
+    res = await fetch(INTERNAL_GAS_URL, {
+      method: "POST", redirect: "follow", cache: "no-store",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err.name === "AbortError") throw new Error(`提交逾時（>${timeout}ms）。`);
+    if (err.name === "TypeError" || String(err.message).toLowerCase().includes("failed to fetch")) {
+      throw new Error(
+        "提交時無法連線到 GAS（Failed to fetch）。\n" +
+        "常見原因：用 file:// 開頁、部署權限不是 Anyone、或部署被刪。"
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const text = await res.text();
+  if (!res.ok) throw new Error(`GAS 回應 HTTP ${res.status}：${text.slice(0, 200)}`);
+  try { return JSON.parse(text); }
+  catch {
+    throw new Error(
+      "GAS 回應不是 JSON，可能部署跑錯版本或 doPost 未正確分派。\n" +
+      "回應開頭：" + text.slice(0, 200).replace(/\s+/g, " ")
+    );
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
+    reader.onerror = () => reject(new Error("讀取收據檔案失敗。"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function initialsFromOwner(name) {
+  return (String(name || "").trim().match(/[A-Za-z]/g) || [])
+    .slice(0, 2).join("").toUpperCase();
+}
+
+function makeOrderNumber() {
+  const initials = initialsFromOwner($("owner").value);
+  if (initials.length < 2) throw new Error("請輸入至少兩個英文字母，才能產生負責人代碼。");
+  return `STEM-${Date.now()}${initials}`;
+}
+
+/* -------------------------
+   依報價模式套用 required（關鍵修正）
+------------------------- */
+
+function applyRequiredByMode() {
+  const bundle = getPricingMode() === "bundle";
+
+  // 商品區（unit 模式用）：bundle 模式下不必填
+  document.querySelectorAll("#products [data-qty], #products [data-price]").forEach(el => {
+    el.required = !bundle;
+  });
+
+  // 商品自訂名稱：只有「unit 模式 + 選了自行輸入」才必填
+  document.querySelectorAll("#products [data-product-row]").forEach(row => {
+    const select = row.querySelector("[data-product-select]");
+    const customInput = row.querySelector("[data-custom-product]");
+    if (!select || !customInput) return;
+    customInput.required = !bundle && select.value === "__CUSTOM__";
+  });
+
+  // 組合區：只有 bundle 模式才必填
+  $("bundleName").required = bundle;
+  $("bundlePrice").required = bundle;
+}
+
+/* -------------------------
+   解鎖課程勾選區（共用）
+------------------------- */
+
+function renderLessonCheckboxes(container, lessons) {
+  if (!lessons || lessons.length === 0) {
+    container.innerHTML = '<p class="hint">目前沒有可解鎖的課程。</p>';
+    return;
+  }
+  container.innerHTML =
+    '<div style="font-weight:700;margin-bottom:6px">可供此學生選購／解鎖的課程</div>' +
+    '<p class="hint" style="margin:0 0 10px">如使用特別報價組合（整組總價），請在此輸入 0，此處僅用於解鎖課程。</p>' +
+    lessons.map(p => {
+      const productName = typeof p === "string" ? p : p.name;
+      return `
+        <div class="lesson-unlock-row">
+          <label>
+            <input type="checkbox" data-lesson value="${esc(productName)}">
+            <span>${esc(productName)}</span>
+          </label>
+          <div class="lesson-price-group">
+            <span>HKD</span>
+            <input type="number" min="0" step="0.01" value="0"
+              data-lesson-price placeholder="0">
+          </div>
+        </div>
+      `;
+    }).join("");
+}
+
+function getStudentUnlockedLessons(row) {
+  const lessons = [];
+  row.querySelectorAll("[data-lesson]:checked").forEach(cb => {
+    const priceInput = cb.closest(".lesson-unlock-row").querySelector("[data-lesson-price]");
+    lessons.push({
+      name: cb.value,
+      price: Math.max(0, Number(priceInput?.value || 0))
+    });
+  });
+  return lessons;
+}
+
+/* -------------------------
+   學生資料列
+------------------------- */
+
+function addStudentRow(name = "", loginEmail = "") {
+  const id = ++studentCounter;
+  const row = document.createElement("div");
+  row.className = "row-card";
+  row.dataset.studentRow = String(id);
+
+  row.innerHTML = `
+    <div class="row-head">
+      <span>學生 ${id}</span>
+      <button type="button" class="btn btn-remove" data-remove-student>移除</button>
+    </div>
+
+    <div class="segmented">
+      <label><input type="radio" name="student-mode-${id}" value="new" checked> 新學生</label>
+      <label><input type="radio" name="student-mode-${id}" value="existing"> 現有學生</label>
+    </div>
+
+    <div data-new-fields>
+      <div class="grid">
+        <div class="field">
+          <label>學生姓名 <span class="required">*</span></label>
+          <input data-student-name required value="${esc(name)}" placeholder="輸入學生姓名">
+        </div>
+        <div class="field">
+          <label>登入 Email <span class="required">*</span></label>
+          <input data-student-email type="email" required
+            value="${esc(loginEmail)}" placeholder="輸入 App 登入 Email">
+        </div>
+      </div>
+      <p class="hint">新學生會檢查 Email 是否已被使用。</p>
+      <button type="button" class="btn btn-outline" data-load-courses-new style="margin-top:10px">
+        檢查 Email 並載入可解鎖課程
+      </button>
+      <div data-new-verify-message class="hint" style="margin-top:8px"></div>
+    </div>
+
+    <div data-existing-fields hidden>
+      <div class="field">
+        <label>驗證方式</label>
+        <select data-verify-method>
+          <option value="id">輸入學生 ID</option>
+          <option value="name_email">輸入姓名＋登入 Email</option>
+        </select>
+      </div>
+
+      <div data-existing-id-box class="field" style="margin-top:10px">
+        <label>學生 ID <span class="required">*</span></label>
+        <input data-existing-id>
+      </div>
+
+      <div data-existing-name-email hidden class="grid" style="margin-top:10px">
+        <div class="field">
+          <label>學生姓名 <span class="required">*</span></label>
+          <input data-existing-name>
+        </div>
+        <div class="field">
+          <label>登入 Email <span class="required">*</span></label>
+          <input data-existing-email type="email">
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-outline" data-verify-student style="margin-top:10px">
+        驗證學生身分
+      </button>
+
+      <div data-verify-message class="hint" style="margin-top:8px"></div>
+
+      <input type="hidden" data-verified-id value="">
+      <input type="hidden" data-verified-name value="">
+      <input type="hidden" data-verified-email value="">
+    </div>
+
+    <div data-verified-products style="margin-top:10px"></div>
+  `;
+
+  const modeRadios = row.querySelectorAll(`input[name="student-mode-${id}"]`);
+  const newFields = row.querySelector("[data-new-fields]");
+  const existingFields = row.querySelector("[data-existing-fields]");
+  const productRows = row.querySelector("[data-verified-products]");
+
+  function clearLessonArea() {
+    productRows.innerHTML = "";
+    productRows.dataset.loaded = "";
+    updateTotals();
+  }
+
+  modeRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      const isNew = row.querySelector(`input[name="student-mode-${id}"]:checked`).value === "new";
+      newFields.hidden = !isNew;
+      existingFields.hidden = isNew;
+      row.dataset.studentType = isNew ? "new" : "existing";
+      row.querySelector("[data-student-name]").required = isNew;
+      row.querySelector("[data-student-email]").required = isNew;
+      row.querySelector("[data-verified-id]").value = "";
+      row.querySelector("[data-verified-name]").value = "";
+      row.querySelector("[data-verified-email]").value = "";
+      row.querySelector("[data-verify-message]").textContent = "";
+      row.querySelector("[data-new-verify-message]").textContent = "";
+      clearLessonArea();
+    });
+  });
+
+  row.querySelector("[data-verify-method]").addEventListener("change", () => {
+    const byId = row.querySelector("[data-verify-method]").value === "id";
+    row.querySelector("[data-existing-id-box]").hidden = !byId;
+    row.querySelector("[data-existing-name-email]").hidden = byId;
+    row.querySelector("[data-existing-id]").required = byId;
+    row.querySelector("[data-existing-name]").required = !byId;
+    row.querySelector("[data-existing-email]").required = !byId;
+    row.querySelector("[data-verified-id]").value = "";
+    row.querySelector("[data-verified-name]").value = "";
+    row.querySelector("[data-verified-email]").value = "";
+    row.querySelector("[data-verify-message]").textContent = "";
+    clearLessonArea();
+  });
+
+  row.querySelector("[data-verify-student]").addEventListener("click", async () => {
+    const method = row.querySelector("[data-verify-method]").value;
+    const msg = row.querySelector("[data-verify-message]");
+    const btn = row.querySelector("[data-verify-student]");
+    const params = { action: "verify_student" };
+
+    if (method === "id") {
+      params.student_id = row.querySelector("[data-existing-id]").value.trim();
+      if (!params.student_id) { msg.textContent = "請輸入學生 ID。"; return; }
+    } else {
+      params.student_name = row.querySelector("[data-existing-name]").value.trim();
+      params.student_email = row.querySelector("[data-existing-email]").value.trim().toLowerCase();
+      if (!params.student_name || !params.student_email) {
+        msg.textContent = "請輸入學生姓名及登入 Email。";
+        return;
+      }
+      if (!/^\S+@\S+\.\S+$/.test(params.student_email)) {
+        msg.textContent = "Email 格式不正確。";
+        return;
+      }
+    }
+
+    btn.disabled = true;
+    msg.textContent = "驗證中…";
+    msg.style.color = "";
+
+    try {
+      const result = await gasGet(params);
+      if (result.status !== "success") throw new Error(result.message || "找不到學生資料");
+
+      row.querySelector("[data-verified-id]").value = result.student_id || "";
+      row.querySelector("[data-verified-name]").value = String(result.student_name || "").trim();
+      row.querySelector("[data-verified-email]").value = String(result.student_email || "").trim().toLowerCase();
+
+      if (method === "name_email") {
+        row.querySelector("[data-existing-name]").value = result.student_name || "";
+        row.querySelector("[data-existing-email]").value = result.student_email || "";
+      }
+
+      msg.textContent = `驗證成功：${result.student_name}（${result.student_email}）`;
+      msg.style.color = "var(--success)";
+
+      renderLessonCheckboxes(productRows, result.available_products || []);
+      productRows.dataset.loaded = "1";
+      updateTotals();
+    } catch (err) {
+      msg.textContent = "驗證失敗：" + err.message;
+      msg.style.color = "var(--danger)";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  row.querySelector("[data-load-courses-new]").addEventListener("click", async () => {
+    const nameInput = row.querySelector("[data-student-name]");
+    const emailInput = row.querySelector("[data-student-email]");
+    const msg = row.querySelector("[data-new-verify-message]");
+    const btn = row.querySelector("[data-load-courses-new]");
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+
+    if (!name) { msg.textContent = "請先輸入學生姓名。"; return; }
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      msg.textContent = "請輸入有效的登入 Email。";
+      return;
+    }
+
+    btn.disabled = true;
+    msg.textContent = "檢查 Email 並載入課程中…";
+    msg.style.color = "";
+
+    try {
+      const result = await gasGet({
+        action: "verify_student",
+        is_new_student: "true",
+        student_email: email
+      });
+
+      if (result.status !== "success") {
+        throw new Error(result.message || "此 Email 可能已被使用");
+      }
+
+      msg.textContent = "✅ Email 可用，已載入可解鎖課程。";
+      msg.style.color = "var(--success)";
+
+      renderLessonCheckboxes(productRows, allUnlockableLessons);
+      productRows.dataset.loaded = "1";
+      updateTotals();
+    } catch (err) {
+      msg.textContent = "⚠️ " + err.message + "。如已有帳號，請切換到「現有學生」。";
+      msg.style.color = "var(--danger)";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  row.querySelector("[data-remove-student]").addEventListener("click", () => {
+    row.remove();
+    renumberRows("#students", "學生");
+    updateTotals();
+  });
+
+  row.dataset.studentType = "new";
+  $("students").appendChild(row);
+}
+
+function renumberRows(containerSelector, label) {
+  [...document.querySelectorAll(`${containerSelector} .row-card .row-head span`)]
+    .forEach((el, i) => { el.textContent = `${label} ${i + 1}`; });
+}
+
+/* -------------------------
+   商品資料列
+------------------------- */
+
+function productOptions(selected = "") {
+  const opts = productsCatalog.map(p => `
+    <option value="${esc(p.name)}" ${p.name === selected ? "selected" : ""}>${esc(p.name)}</option>
+  `).join("");
+
+  return `
+    <option value="">請選擇商品，或選擇自行輸入</option>
+    ${opts}
+    <option value="__CUSTOM__" ${selected === "__CUSTOM__" ? "selected" : ""}>
+      ＋ 自行輸入其他商品
+    </option>
+  `;
+}
+
+function addProductRow() {
+  const id = ++productCounter;
+  const row = document.createElement("div");
+  row.className = "row-card";
+  row.dataset.productRow = String(id);
+
+  row.innerHTML = `
+    <div class="row-head">
+      <span>商品 ${id}</span>
+      <button type="button" class="btn btn-remove" data-remove-product>移除</button>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label>商品</label>
+        <select data-product-select>${productOptions()}</select>
+        <input data-custom-product placeholder="自行輸入商品名稱" style="display:none;margin-top:8px">
+      </div>
+      <div class="field">
+        <label>數量</label>
+        <input data-qty type="number" min="1" step="1" value="1">
+      </div>
+      <div class="field">
+        <label>特別單價（HKD）</label>
+        <input data-price type="number" min="0" step="0.01" value="" placeholder="輸入本次報價">
+      </div>
+    </div>
+  `;
+
+  const select = row.querySelector("[data-product-select]");
+  select.addEventListener("change", () => {
+    const custom = select.value === "__CUSTOM__";
+    const customInput = row.querySelector("[data-custom-product]");
+    customInput.style.display = custom ? "block" : "none";
+    if (!custom) customInput.value = "";
+    applyRequiredByMode();
+    updateTotals();
+  });
+
+  row.querySelector("[data-remove-product]").addEventListener("click", () => {
+    row.remove();
+    renumberRows("#products", "商品");
+    updateTotals();
+  });
+
+  row.querySelectorAll("input").forEach(el => {
+    el.addEventListener("input", updateTotals);
+  });
+
+  $("products").appendChild(row);
+  applyRequiredByMode();
+}
+
+function readProductRows() {
+  return [...document.querySelectorAll("#products [data-product-row]")]
+    .map(row => {
+      const selected = row.querySelector("[data-product-select]").value;
+      const name = selected === "__CUSTOM__"
+        ? row.querySelector("[data-custom-product]").value.trim()
+        : selected;
+      return {
+        name,
+        quantity: Number(row.querySelector("[data-qty]").value || 0),
+        unit_price: Number(row.querySelector("[data-price]").value || 0),
+        custom: selected === "__CUSTOM__"
+      };
+    })
+    .filter(p => p.name && p.quantity > 0);
+}
+
+function readUnlockedLessons() {
+  const lessons = [];
+  document.querySelectorAll("#students [data-student-row]").forEach(row => {
+    const isNew = row.dataset.studentType !== "existing";
+
+    let studentName, studentId;
+    if (isNew) {
+      studentName = row.querySelector("[data-student-name]").value.trim();
+      studentId = "";
+    } else {
+      studentName = row.querySelector("[data-verified-name]").value.trim();
+      studentId = row.querySelector("[data-verified-id]").value.trim();
+      if (!studentId) return;
+    }
+    if (!studentName) return;
+
+    row.querySelectorAll("[data-lesson]:checked").forEach(cb => {
+      const priceInput = cb.closest(".lesson-unlock-row").querySelector("[data-lesson-price]");
+      lessons.push({
+        student_name: studentName,
+        student_id: studentId,
+        is_new: isNew,
+        name: cb.value,
+        price: Math.max(0, Number(priceInput?.value || 0))
+      });
+    });
+  });
+  return lessons;
+}
+
+/* -------------------------
+   價格計算
+------------------------- */
+
+function getPricingMode() {
+  return document.querySelector('input[name="pricingMode"]:checked').value;
+}
+
+function calculateAmounts() {
+  const shipping = Math.max(0, Number($("shipping").value || 0));
+
+  let items = [];
+  let subtotal = 0;
+
+  if (getPricingMode() === "unit") {
+    items = readProductRows();
+    subtotal = items.reduce((sum, p) => sum + p.quantity * p.unit_price, 0);
+  } else {
+    const qty = Math.max(1, Number($("bundleQty").value || 1));
+    const price = Math.max(0, Number($("bundlePrice").value || 0));
+    const bundleName = $("bundleName").value.trim();
+
+    if (bundleName) {
+      subtotal = qty * price;
+      items = [{
+        name: bundleName,
+        quantity: qty,
+        bundle_items: $("bundleItems").value.trim(),
+        unit_price: price,
+        is_bundle: true
+      }];
+    }
+  }
+
+  const unlockedLessons = readUnlockedLessons();
+  const unlockTotal = unlockedLessons.reduce((sum, l) => sum + l.price, 0);
+
+  return {
+    items,
+    unlockedLessons,
+    subtotal,
+    unlockTotal,
+    shipping,
+    total: subtotal + unlockTotal + shipping
+  };
+}
+
+function updateTotals() {
+  const a = calculateAmounts();
+
+  const breakdown = $("itemBreakdown");
+  const parts = [];
+
+  if (a.items.length > 0 && a.items[0].name) {
+    parts.push('<div class="breakdown-title">訂購商品：</div>');
+    a.items.forEach(item => {
+      const lineTotal = item.quantity * item.unit_price;
+      if (item.is_bundle) {
+        parts.push(
+          `<div class="breakdown-item">${esc(item.name)} x ${item.quantity} @ HKD ${Number(item.unit_price).toFixed(2)} / 組 = HKD ${Number(lineTotal).toFixed(2)}</div>`
+        );
+        if (item.bundle_items) {
+          parts.push(`<div class="breakdown-sub">組合內容：${esc(item.bundle_items)}</div>`);
+        }
+      } else {
+        parts.push(
+          `<div class="breakdown-item">${esc(item.name)} x ${item.quantity} = HKD ${Number(lineTotal).toFixed(2)}</div>`
+        );
+      }
+    });
+  }
+
+  if (a.unlockedLessons.length > 0) {
+    parts.push('<div class="breakdown-title" style="margin-top:10px">訂購商品(with解鎖課程)：</div>');
+    a.unlockedLessons.forEach(l => {
+      const idLabel = l.is_new ? "新學生" : l.student_id;
+      parts.push(
+        `<div class="breakdown-item">${esc(l.student_name)} (${esc(idLabel)}): ${esc(l.name)} = HKD ${Number(l.price).toFixed(2)}</div>`
+      );
+    });
+  }
+
+  if (parts.length) {
+    breakdown.hidden = false;
+    breakdown.innerHTML = parts.join("");
+  } else {
+    breakdown.hidden = true;
+    breakdown.innerHTML = "";
+  }
+
+  const unlockLine = $("unlockTotalLine");
+  if (a.unlockTotal > 0) {
+    unlockLine.hidden = false;
+    $("unlockTotalDisplay").textContent = money(a.unlockTotal);
+  } else {
+    unlockLine.hidden = true;
+  }
+
+  $("subtotalDisplay").textContent = money(a.subtotal);
+  $("shippingDisplay").textContent = money(a.shipping);
+  $("totalDisplay").textContent = money(a.total);
+}
+
+/* -------------------------
+   組成訂單資料
+------------------------- */
+
+function collectPayload() {
+  const amount = calculateAmounts();
+
+  const students = [...document.querySelectorAll("#students [data-student-row]")]
+    .map(row => {
+      const isNew = row.dataset.studentType !== "existing";
+
+      if (isNew) {
+        return {
+          student_type: "new",
+          student_name: row.querySelector("[data-student-name]").value.trim(),
+          student_email: row.querySelector("[data-student-email]").value.trim().toLowerCase(),
+          student_id: "",
+          unlocked_lessons: getStudentUnlockedLessons(row)
+        };
+      }
+
+      return {
+        student_type: "existing",
+        student_name: row.querySelector("[data-verified-name]").value.trim(),
+        student_email: row.querySelector("[data-verified-email]").value.trim().toLowerCase(),
+        student_id: row.querySelector("[data-verified-id]").value.trim(),
+        unlocked_lessons: getStudentUnlockedLessons(row)
+      };
+    });
+
+  return {
+    source: "Internal Special Order",
+    order_number: makeOrderNumber(),
+    owner: $("owner").value.trim(),
+    receiver: $("receiver").value.trim(),
+    tel: $("tel").value.trim(),
+    email: $("email").value.trim().toLowerCase(),
+    mailing_address: $("mailing_address").value.trim(),
+    students,
+    pricing_mode: getPricingMode(),
+    items: amount.items,
+    subtotal: amount.subtotal,
+    unlock_total: amount.unlockTotal,
+    shipping: amount.shipping,
+    discount: 0,
+    total_amount: amount.total,
+    payment_method: $("payment_method").value,
+    internal_note: $("internalNote").value.trim(),
+    receipt_filename: $("receipt").files[0]?.name || "",
+    receipt_mimetype: $("receipt").files[0]?.type || ""
+  };
+}
+
+/* -------------------------
+   提交成功後清空
+------------------------- */
+
+function resetFormAfterSuccess() {
+  $("receiver").value = "";
+  $("tel").value = "";
+  $("email").value = "";
+  $("owner").value = "Elise";
+  $("mailing_address").value = "";
+  $("internalNote").value = "";
+  $("receipt").value = "";
+
+  $("shipping").value = "0";
+  $("bundleName").value = "";
+  $("bundleQty").value = "1";
+  $("bundlePrice").value = "";
+  $("bundleItems").value = "";
+
+  const unitRadio = document.querySelector('input[name="pricingMode"][value="unit"]');
+  if (unitRadio) unitRadio.checked = true;
+  $("unitPricing").hidden = false;
+  $("bundlePricing").hidden = true;
+
+  $("students").innerHTML = "";
+  $("products").innerHTML = "";
+  studentCounter = 0;
+  productCounter = 0;
+  addStudentRow();
+  addProductRow();
+
+  applyRequiredByMode();
+  updateTotals();
+}
+
+/* -------------------------
+   讀取 Products 及 PaymentMethods
+------------------------- */
+
+function refreshProductSelects() {
+  document.querySelectorAll("#products [data-product-select]").forEach(select => {
+    const old = select.value;
+    select.innerHTML = productOptions(old);
+    if (![...select.options].some(o => o.value === old)) select.value = "";
+  });
+}
+
+async function loadDraftConfig() {
+  const payment = $("payment_method");
+  payment.innerHTML = '<option value="">載入付款方式中…</option>';
+
+  try {
+    const result = await gasGet({ action: "getConfig" });
+    if (result.status !== "success") throw new Error(result.message || "讀取設定失敗");
+
+    productsCatalog = (result.products || [])
+      .map(p => ({
+        name: p["Product Name"] || p.name || "",
+        price: Number(p["Price(HKD)"] || p.price || 0)
+      }))
+      .filter(p => p.name);
+
+    allUnlockableLessons = (result.products || [])
+      .filter(p => {
+        const type = String(p["Type"] || "").trim();
+        const avail = String(p["Availability"] || "").trim();
+        return type !== "Other" && avail === "Y" && p["Product Name"];
+      })
+      .map(p => ({
+        name: p["Product Name"],
+        price: Number(p["Price(HKD)"]) || 0
+      }));
+
+    refreshProductSelects();
+
+    const methods = result.paymentMethods || [];
+    payment.innerHTML =
+      '<option value="">請選擇付款方式</option>' +
+      methods.map(m => {
+        const v = m["Payment Method"] || m.value || m.name || "";
+        return `<option value="${esc(v)}">${esc(v)}</option>`;
+      }).join("");
+
+    showStatus(
+      `已連接 GAS：載入 ${productsCatalog.length} 個商品、${allUnlockableLessons.length} 個可解鎖課程、${methods.length} 個付款方式。`,
+      "success"
+    );
+  } catch (err) {
+    productsCatalog = [];
+    allUnlockableLessons = [];
+    refreshProductSelects();
+    payment.innerHTML = '<option value="">無法載入付款方式（請先檢查 GAS）</option>';
+    console.error("[loadDraftConfig]", err);
+    showStatus("目前無法從 GAS 載入 Products／PaymentMethods。\n原因：" + err.message, "error");
+  }
+}
+
+/* -------------------------
+   事件設定
+------------------------- */
+
+document.querySelectorAll('input[name="pricingMode"]').forEach(el => {
+  el.addEventListener("change", () => {
+    const bundle = getPricingMode() === "bundle";
+    $("unitPricing").hidden = bundle;
+    $("bundlePricing").hidden = !bundle;
+    applyRequiredByMode();
+    updateTotals();
+  });
+});
+
+$("addStudent").addEventListener("click", () => addStudentRow());
+$("addProduct").addEventListener("click", () => addProductRow());
+$("shipping").addEventListener("input", updateTotals);
+
+["bundleQty", "bundlePrice", "bundleName", "bundleItems"].forEach(id => {
+  $(id).addEventListener("input", updateTotals);
+});
+
+$("students").addEventListener("change", e => {
+  if (e.target.matches("[data-lesson]")) updateTotals();
+});
+$("students").addEventListener("input", e => {
+  if (e.target.matches("[data-lesson-price]")) updateTotals();
+});
+
+["receiver", "tel", "email", "mailing_address", "owner"].forEach(id => {
+  $(id).addEventListener("blur", () => {
+    const el = $(id);
+    el.value = el.value.trim();
+    if (id === "email") el.value = el.value.toLowerCase();
+  });
+});
+
+/* 提交 */
+$("internalOrderForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  clearSubmitStatus();
+
+  // 手動驗證：先找出無效欄位，若在隱藏區給出提示
+  if (!validateFormBeforeSubmit()) return;
+
+  const submitBtn = $("submitBtn");
+  submitBtn.disabled = true;
+
+  try {
+    const payload = collectPayload();
+
+    if (!payload.students.length) throw new Error("請至少新增一位學生。");
+
+    if (payload.items.length === 0 && payload.unlock_total === 0) {
+      throw new Error("請至少填寫一項商品或組合內容，或解鎖至少一個課程。");
+    }
+
+    if (payload.students.some(s => s.student_type === "existing" && !s.student_id)) {
+      throw new Error("請先完成所有現有學生的身分驗證。");
+    }
+
+    for (let i = 0; i < payload.students.length; i++) {
+      const s = payload.students[i];
+      (s.unlocked_lessons || []).forEach(l => {
+        if (!Number.isFinite(l.price) || l.price < 0) {
+          throw new Error(`學生 ${i + 1} 的解鎖課程價格不正確。`);
+        }
+      });
+    }
+
+    const emails = payload.students.map(s => s.student_email).filter(Boolean);
+    if (new Set(emails).size !== emails.length) {
+      throw new Error("學生登入 Email 不可重複，請檢查前後空格或重複帳號。");
+    }
+
+    showSubmitStatus("正在檢查新學生 Email…", "info");
+
+    for (let i = 0; i < payload.students.length; i++) {
+      const student = payload.students[i];
+      if (student.student_type === "new") {
+        if (!student.student_name || !student.student_email) {
+          throw new Error(`請填寫學生 ${i + 1} 的姓名及登入 Email。`);
+        }
+        if (!/^\S+@\S+\.\S+$/.test(student.student_email)) {
+          throw new Error(`學生 ${i + 1} 的 Email 格式不正確。`);
+        }
+        const result = await gasGet({
+          action: "verify_student",
+          is_new_student: "true",
+          student_email: student.student_email
+        });
+        if (result.status !== "success") {
+          throw new Error(`學生 ${i + 1}：${result.message || "Email 驗證失敗"}`);
+        }
+      }
+    }
+
+    if (getPricingMode() === "bundle" && !payload.items[0]?.name) {
+      throw new Error("請輸入組合名稱。");
+    }
+
+    const receiptFile = $("receipt").files[0];
+    if (!receiptFile) {
+      if (!confirm("尚未上傳收據。是否仍要提交？")) return;
+    } else {
+      showSubmitStatus("正在讀取收據檔案…", "info");
+      payload.receipt_base64 = await fileToBase64(receiptFile);
+    }
+
+    showSubmitStatus("正在提交訂單到 GAS…", "info");
+    const result = await gasPost(payload);
+
+    if (result.status !== "success") {
+      throw new Error(result.message || "GAS 回報提交失敗。");
+    }
+
+    showSubmitStatus(
+      "✅ 訂單提交成功！\n" +
+      "訂單編號：" + (result.order_number || "") + "\n" +
+      "學生人數：" + (result.student_count ?? payload.students.length) + "\n" +
+      "訂購商品小計：HKD " + (result.subtotal ?? payload.subtotal) + "\n" +
+      "解鎖課程小計：HKD " + (result.unlock_total ?? payload.unlock_total) + "\n" +
+      "運費：HKD " + (result.shipping ?? payload.shipping) + "\n" +
+      "總額：HKD " + (result.total_amount ?? payload.total_amount) + "\n" +
+      "收據：" + (result.receipt_url || "無上傳檔案") + "\n" +
+      "確認電郵：" + (result.email_sent ? "已寄出" : "未寄出（請檢查 MailApp 權限）"),
+      "success"
+    );
+
+    resetFormAfterSuccess();
+  } catch (err) {
+    console.error(err);
+    showSubmitStatus("提交失敗：" + err.message, "error");
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+/* 手動驗證：若無效欄位在隱藏區，給出明確提示 */
+function validateFormBeforeSubmit() {
+  const form = $("internalOrderForm");
+  if (form.checkValidity()) return true;
+
+  const invalids = [...form.querySelectorAll(":invalid")]
+    .filter(el => el.type !== "hidden");
+
+  // 若所有 invalid 都在隱藏區，切換一次模式後再試
+  const hiddenInvalid = invalids.find(el => el.closest("[hidden]"));
+
+  if (hiddenInvalid) {
+    // 嘗試把 invalid 元素所在區塊顯示出來
+    const sec = hiddenInvalid.closest("#unitPricing, #bundlePricing");
+    if (sec) {
+      // 直接切換模式
+      const targetMode = sec.id === "unitPricing" ? "unit" : "bundle";
+      const radio = document.querySelector(`input[name="pricingMode"][value="${targetMode}"]`);
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      showSubmitStatus(
+        "有必填欄位位於目前隱藏的區塊。已自動切換到對應模式，請檢查後再提交。",
+        "error"
+      );
+      return false;
+    }
+  }
+
+  // 一般 invalid 欄位：滾動 + 提示
+  if (invalids.length) {
+    const first = invalids[0];
+    first.scrollIntoView({ behavior: "smooth", block: "center" });
+    try { first.focus({ preventScroll: true }); } catch (_) {}
+    showSubmitStatus("請填寫所有必填欄位（紅色提示的欄位）。", "error");
+    return false;
+  }
+
+  return true;
+}
+
+/* 初始 */
+addStudentRow();
+addProductRow();
+applyRequiredByMode();
+loadDraftConfig();
+updateTotals();
+</script>
+</body>
+</html>
